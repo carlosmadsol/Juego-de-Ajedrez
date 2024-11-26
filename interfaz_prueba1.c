@@ -56,31 +56,49 @@ void actualizar_estado(GtkGrid *grid) {
     }
 }
 
-// Funcion para habilitar los clicks
+// Funcion para habilitar los clicks en las casillas del tablero.
+// Esta funcion maneja la seleccion de origen y destino para mover una pieza.
+// Verifica si es el turno del jugador, valida el movimiento y actualiza la interfaz grafica.
 void on_square_clicked(GtkButton *button, gpointer data) {
+    // Inicialmente, la posicion es {-1, -1}, lo que indica que no se ha seleccionado ninguna casilla.
     static kgchess_pos_t from = {-1, -1};
+
+    // Convertimos el puntero deta a un puntero kgchess_pos_t.
+    // Esto nos permite acceder a las coordenadas (x, y) de la casilla que fue clicada.
     kgchess_pos_t *pos = (kgchess_pos_t *)data;
 
-    // Verifica si la pieza pertenece al jugador actual
+    // Obtenemos la pieza que se encuentra en la casilla clicada utilizando la funcion de la biblioteca kgchess.
     kgchess_piece_t pieza = kgchess_get_piece_at(juego, pos->x, pos->y);
+
+    // Nos aseguramos de que la pieza seleccionada pertenezca al jugador que esta en turno.
     if (from.x == -1 && pieza.player != kgchess_get_current_player(juego)) {
+        // Si no es el turno del jugador que intenta mover la pieza, mostramos un mensaje en la consola y no permitimos realizar ninguna accion.
         printf("No es tu turno.\n");
-        return; // No permite mover una pieza del oponente.
+        return; // Finalizamos la funcion para evitar que se seleccione una pieza del oponente.
     }
 
+    // Si no hay una posicion de origen seleccionada, asignamos la casilla clicada como origen.
     if (from.x == -1) {
-        from = *pos;
+        from = *pos; // Guardamos las coordenadas de la casilla clicada en "from".
     } else {
+        // Si ya hay una posicion de origen seleccionada, definimos un movimiento desde "from" hacia "pos". El movimiento incluye informacion sobre origen, destino y flags adicionales (en este caso, no es un ataque especial, enroque ni captura al paso).
         kgchess_move_t move = {from, *pos, false, false, false};
 
+        // Intentamos realizar el movimiento utilizando la funcion "kgchess_move".
+        // Si el movimiento es valido:
         if (kgchess_move(juego, move)) {
+            // Actualizamos el estado del tablero en la interfaz grafica.
+            // Esto asegura que el tablero muestre las posiciones actualizadas de las piezas.
             actualizar_estado(GTK_GRID(gtk_widget_get_parent(GTK_WIDGET(button))));
         } else {
-            printf("Movimiento no válido.\n");
+            // Si el movimiento no es valido, mostramos un mensaje en la consola indicando el error.
+            printf("Movimiento no valido.\n");
         }
+        // Reiniciamos la posicion de origen para permitir seleccionar una nueva pieza en el proximo clic.
         from.x = -1;
     }
 }
+
 
 // Funcion que crea el tablero de ajedrez (8x8) como una cuadricula de botones.
 GtkWidget* crear_tablero() {
@@ -126,8 +144,16 @@ void presionar_el_boton_de_play(GtkButton *button, gpointer user_data) {
     GtkWindow *window = GTK_WINDOW(user_data); // Obtenemos la ventana principal.
 
     GtkWidget *board = crear_tablero(); // Creamos el tablero de ajedrez.
-    gtk_window_set_child(window, board); // Reemplazamos el contenido de la ventana con el tablero.
+
+    // Caja para centrar el tablero
+    GtkWidget *center_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_halign(center_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(center_box, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(center_box), board);
+
+    gtk_window_set_child(window, center_box); // Reemplazamos el contenido de la ventana con el tablero centrado.
 }
+
 
 // Funcion para activar la aplicacion.
 // Crea la ventana inicial y muestra el boton Play.
@@ -145,10 +171,24 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_window_set_title(GTK_WINDOW(window), "Ajedrez con kgchess");
     gtk_window_set_default_size(GTK_WINDOW(window), 600, 600);
 
+    // Crear una caja vertical para el título y el botón Play
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_halign(vbox, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(vbox, GTK_ALIGN_CENTER);
+    gtk_window_set_child(GTK_WINDOW(window), vbox);
+
+    // Título de bienvenida
+    GtkWidget *title = gtk_label_new("Bienvenido a nuestro programa de ajedrez");
+    gtk_widget_add_css_class(title, "title-label");
+    gtk_box_append(GTK_BOX(vbox), title);
+
+    // Botón Play estilizado
     GtkWidget *play_button = gtk_button_new_with_label("Play");
-    gtk_window_set_child(GTK_WINDOW(window), play_button);
+    gtk_widget_add_css_class(play_button, "play-button");
+    gtk_box_append(GTK_BOX(vbox), play_button);
 
     g_signal_connect(play_button, "clicked", G_CALLBACK(presionar_el_boton_de_play), window);
+
     gtk_widget_set_visible(window, TRUE);
 }
 
