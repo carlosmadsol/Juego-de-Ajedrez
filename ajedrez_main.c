@@ -60,8 +60,7 @@ void printBoard(ChessGame *game) {
 }
 
 // Función para verificar si un movimiento es válido
-int is MovVal(ChessGame *game, const char *move) {
-    // Falta 
+int is MovVal(ChessGame *game, const char *move) { 
 }
 // Función para ejecutar un movimiento
 void Mover(ChessGame *game, const char *move) {
@@ -89,7 +88,7 @@ void playGame() {
         move[strcspn(move, "\n")] = 0; // Eliminar salto de línea
 
         // Validar y realizar el movimiento
-        if (is MovVal (&game, move)) {
+        if ( MovVal (&game, move)) {
             Mover(&game, move);
             game.turn = 1 - game.turn; // Cambiar el turno
         } else {
@@ -97,8 +96,7 @@ void playGame() {
         }
     }
 }
-
-int main() {
+int main(){
     playGame();
     return 0;
 }
